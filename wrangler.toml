@@ -2,7 +2,7 @@ name = "between-us-ai-proxy"
 main = "serverless/cloudflare-worker/index.js"
 compatibility_date = "2026-08-16"
 # Replace with your Cloudflare account ID
-account_id = "YOUR_ACCOUNT_ID"
+account_id = "b789eb9b5b6fb0f5f9efd93f7a537a54"
 
 # If you want to deploy to a custom route, set `route` and `zone_id`.
 # route = "https://example.com/generate"

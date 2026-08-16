@@ -4,6 +4,8 @@
 export default {
   async fetch(request, env) {
     const url = new URL(request.url)
+
+    // CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, {
         status: 204,
@@ -26,32 +28,32 @@ export default {
       return new Response(JSON.stringify({ error: 'Invalid JSON body' }), { status: 400, headers: { 'Content-Type': 'application/json' } })
     }
 
+    // Upstream target is configurable via AI_UPSTREAM env binding. If you want to call
+    // Google's Gemini REST API directly, set AI_UPSTREAM to the official endpoint and
+    // bind your API key to the `GEMINI_API_KEY` secret.
+    const upstream = env.AI_UPSTREAM || env.GEMINI_UPSTREAM || 'https://api.example.gemini/v1/generate'
     const key = env.GEMINI_API_KEY
-    if (!key) {
-      return new Response(JSON.stringify({ error: 'Missing GEMINI_API_KEY' }), { status: 500, headers: { 'Content-Type': 'application/json' } })
-    }
 
-    // NOTE: Replace the endpoint below with the official Gemini REST endpoint and adjust the
-    // request shape to match Google's API. This proxy simply forwards requests and adds
-    // Authorization header so your secret key remains on the server-side.
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    }
+    if (key) headers['Authorization'] = `Bearer ${key}`
+
     try {
-      const apiRes = await fetch('https://api.example.gemini/v1/generate', {
+      const apiRes = await fetch(upstream, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${key}`,
-        },
+        headers,
         body: JSON.stringify(body),
       })
 
-      const json = await apiRes.json()
-      return new Response(JSON.stringify(json), {
-        status: apiRes.status,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
+      const text = await apiRes.text()
+      const resHeaders = new Headers({
+        'Content-Type': apiRes.headers.get('content-type') || 'application/json',
+        'Access-Control-Allow-Origin': '*',
       })
+
+      return new Response(text, { status: apiRes.status, headers: resHeaders })
     } catch (err) {
       return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { 'Content-Type': 'application/json' } })
     }
