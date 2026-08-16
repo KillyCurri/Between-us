@@ -17,6 +17,8 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+        env:
+          VITE_AI_ENDPOINT: ${{ secrets.VITE_AI_ENDPOINT }}
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
